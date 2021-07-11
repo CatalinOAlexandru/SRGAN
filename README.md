@@ -1,5 +1,5 @@
 # Super Resolution for Histological Images
-Based on the implementation by Lefttohas, I am currently improving or fixing certain aspects of this implementation to make it work for my project.
+Based on the implementation by Leftthomas , I am currently improving or fixing certain aspects of this implementation to make it work for my project.
 
 My poroject is looking in increasing the resolution of histological images by large scale factors (4,8,16,32). Histological images are usually very high in quality (can get to around 20l x 20k pixels in resolution) however it is very hard to optain them, time consuming and requires expensive hardware. Compared with CT and MRI images which are very low quality a super resolution neural network can help cut some of the time and cost of optaining them.
 
