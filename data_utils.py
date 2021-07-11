@@ -79,8 +79,8 @@ class ValDatasetFromFolder(Dataset):
 class TestDatasetFromFolder(Dataset):
     def __init__(self, dataset_dir, upscale_factor):
         super(TestDatasetFromFolder, self).__init__()
-        self.lr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/data/'
-        self.hr_path = dataset_dir + '/SRF_' + str(upscale_factor) + '/target/'
+        self.lr_path = dataset_dir + '/data/'
+        self.hr_path = dataset_dir + '/target/'
         self.upscale_factor = upscale_factor
         self.lr_filenames = [join(self.lr_path, x) for x in listdir(self.lr_path) if is_image_file(x)]
         self.hr_filenames = [join(self.hr_path, x) for x in listdir(self.hr_path) if is_image_file(x)]

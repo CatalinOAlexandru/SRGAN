@@ -20,7 +20,11 @@ parser.add_argument('--crop_size', default=88, type=int, help='training images c
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],
                     help='super resolution upscale factor')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
-
+parser.add_argument('--batch', default=64, type=int, help='batch number')
+parser.add_argument('--path_train', default='/home/calexand/datasets/DIV2K/train', type=str, help='path to train')
+parser.add_argument('--path_valid', default='/home/calexand/datasets/DIV2K/valid', type=str, help='path to validation')
+parser.add_argument('--name', default='SRF', type=str, help='a name for folders or this run')
+parser.add_argument('--workers', default='4', type=int, help='Number of workers / cores')
 
 if __name__ == '__main__':
     opt = parser.parse_args()
@@ -28,11 +32,16 @@ if __name__ == '__main__':
     CROP_SIZE = opt.crop_size
     UPSCALE_FACTOR = opt.upscale_factor
     NUM_EPOCHS = opt.num_epochs
-    
-    train_set = TrainDatasetFromFolder('data/DIV2K_train_HR', crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
-    val_set = ValDatasetFromFolder('data/DIV2K_valid_HR', upscale_factor=UPSCALE_FACTOR)
-    train_loader = DataLoader(dataset=train_set, num_workers=4, batch_size=64, shuffle=True)
-    val_loader = DataLoader(dataset=val_set, num_workers=4, batch_size=1, shuffle=False)
+    PATH_TRAIN = opt.path_train
+    PATH_VALID = opt.path_valid
+    FOLDER_NAME = opt.name
+    BATCH_NUM = opt.batch
+    WORKERS = opt.workers
+
+    train_set = TrainDatasetFromFolder(PATH_TRAIN, crop_size=CROP_SIZE, upscale_factor=UPSCALE_FACTOR)
+    val_set = ValDatasetFromFolder(PATH_VALID, upscale_factor=UPSCALE_FACTOR)
+    train_loader = DataLoader(dataset=train_set, num_workers=WORKERS, batch_size=BATCH_NUM, shuffle=True)
+    val_loader = DataLoader(dataset=val_set, num_workers=WORKERS, batch_size=1, shuffle=False)
     
     netG = Generator(UPSCALE_FACTOR)
     print('# generator parameters:', sum(param.numel() for param in netG.parameters()))
@@ -110,7 +119,7 @@ if __name__ == '__main__':
                 running_results['g_score'] / running_results['batch_sizes']))
     
         netG.eval()
-        out_path = 'training_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+        out_path = 'training_results/'+str(FOLDER_NAME)+'_' + str(UPSCALE_FACTOR) + '/'
         if not os.path.exists(out_path):
             os.makedirs(out_path)
         
@@ -149,10 +158,14 @@ if __name__ == '__main__':
                 image = utils.make_grid(image, nrow=3, padding=5)
                 utils.save_image(image, out_path + 'epoch_%d_index_%d.png' % (epoch, index), padding=5)
                 index += 1
+                if index == 4:
+                    break
     
         # save model parameters
-        torch.save(netG.state_dict(), 'epochs/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
-        torch.save(netD.state_dict(), 'epochs/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+        if not os.path.isdir('epochs/'+str(FOLDER_NAME)):
+            os.mkdir('epochs/'+str(FOLDER_NAME))
+        torch.save(netG.state_dict(), 'epochs/'+str(FOLDER_NAME)+'/netG_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
+        torch.save(netD.state_dict(), 'epochs/'+str(FOLDER_NAME)+'/netD_epoch_%d_%d.pth' % (UPSCALE_FACTOR, epoch))
         # save loss\scores\psnr\ssim
         results['d_loss'].append(running_results['d_loss'] / running_results['batch_sizes'])
         results['g_loss'].append(running_results['g_loss'] / running_results['batch_sizes'])
@@ -167,4 +180,4 @@ if __name__ == '__main__':
                 data={'Loss_D': results['d_loss'], 'Loss_G': results['g_loss'], 'Score_D': results['d_score'],
                       'Score_G': results['g_score'], 'PSNR': results['psnr'], 'SSIM': results['ssim']},
                 index=range(1, epoch + 1))
-            data_frame.to_csv(out_path + 'srf_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
+            data_frame.to_csv(out_path + str(FOLDER_NAME)+'_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
